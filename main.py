@@ -4,9 +4,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from passlib.context import CryptContext
+import jwt
+from datetime import datetime, timedelta
 
 
 app = FastAPI()
+
+# Root Route
 
 
 @app.get("/")
@@ -18,6 +22,8 @@ DATABASE_URL = "sqlite:///./test/db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# User Model
 
 
 class User(Base):
@@ -35,8 +41,11 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
+# Register User
+
 
 @app.post("/register")
+
 
 def get_db():
     db = SessionLocal()
@@ -55,9 +64,34 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
 
-    return {"message": "User registered successfully!"}
+    access_token = create_access_token(data={"sub": user.username})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "message": "User registered successfully!"
+    }
 
 
 def get_password_hash(password: str):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     return pwd_context.hash(password)
+
+# Generate JWT Token
+
+
+SECRET_KEY = "secretkey"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+def create_access_token(data: dict, expires_delta:timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
