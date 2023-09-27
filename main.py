@@ -57,7 +57,6 @@ class UserCreate(BaseModel):
 # Register User
 
 
-@app.post("/register")
 def get_db():
     db = SessionLocal()
     try:
