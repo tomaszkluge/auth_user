@@ -7,10 +7,20 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 import jwt
 from datetime import datetime, timedelta
+import sqlite3
 
+conn = sqlite3.connect('my_database.db')
+cursor = conn.cursor()
 app = FastAPI()
 
+cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+)""")
 
+conn.commit()
+conn.close()
 # Root Route
 
 
@@ -19,7 +29,7 @@ def read_root():
     return {"message": "Hello Space!"}
 
 
-DATABASE_URL = "sqlite:///./test/db"
+DATABASE_URL = "sqlite:///my_database.db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
